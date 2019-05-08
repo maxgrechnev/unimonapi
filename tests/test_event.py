@@ -6,22 +6,12 @@ from unimonapi import UnimonError
 def critical_event():
     return Event(Event.PROBLEM, True, Event.CRITICAL, 'host', 'text', 'id')
 
-def test_event_type(critical_event):
+def test_event_init(critical_event):
     assert critical_event.type == Event.PROBLEM
-
-def test_event_detailed(critical_event):
     assert critical_event.detailed == True
-
-def test_event_severity(critical_event):
     assert critical_event.severity == Event.CRITICAL
-
-def test_event_host(critical_event):
     assert critical_event.host == 'host'
-
-def test_event_text(critical_event):
     assert critical_event.text == 'text'
-
-def test_event_id(critical_event):
     assert critical_event.id == 'id'
 
 def test_event_type_unsupported():
