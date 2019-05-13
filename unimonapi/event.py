@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from error import UnimonError
-import emoji
 
 class Event:
     ''' Universal monitoring event '''
@@ -9,11 +8,11 @@ class Event:
     RESOLUTION, PROBLEM = range(2)
     NO_SEVERITY, INFO, WARNING, CRITICAL = range(-1, 3)
     SEVERITY_ICONS = {
-        INFO:       emoji.emojize(':information_source:', use_aliases = True),
-        WARNING:    emoji.emojize(':warning:', use_aliases = True),
-        CRITICAL:   emoji.emojize(':no_entry:', use_aliases = True),
+        INFO:       u'\u2139', # unicode char 'information_source'
+        WARNING:    u'\u26a0', # unicode char 'warning'
+        CRITICAL:   u'\u26d4', # unicode char 'no_entry'
     }
-    RESOLUTION_ICON = emoji.emojize(':white_check_mark:', use_aliases = True)
+    RESOLUTION_ICON = u'\u2705' # unicode char 'white_check_mark'
 
     def __init__(self, event_type, event_detailed, event_severity, event_host, event_text, event_id):
         """ Initialize event object.
