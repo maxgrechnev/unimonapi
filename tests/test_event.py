@@ -2,7 +2,7 @@ import pytest
 from unimonapi import Event
 from unimonapi import UnimonError
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def critical_event():
     return Event(Event.PROBLEM, True, Event.CRITICAL, 'host', 'text', 'id')
 

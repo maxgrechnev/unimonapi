@@ -19,18 +19,10 @@ EXPORT_KEYS = [
 ]
 
 def export_configs(zabbix_api, auto_created=False):
-    template_ids = [ template['templateid'] for template in
-        zabbix_api.template.get(output=['templateid', 'host'])
-    ]
-    host_ids = [ host['hostid'] for host in
-        zabbix_api.host.get(output=['hostid'])
-    ]
-    value_map_ids = [ value_map['valuemapid'] for value_map in
-        zabbix_api.valuemap.get(output=['valuemapid'])
-    ]
-    host_group_ids = [ group['groupid'] for group in
-        zabbix_api.hostgroup.get(output=['groupid'])
-    ]
+    template_ids = zabbix_api.template.get(output=['templateid'], preservekeys=True).keys()
+    host_ids = zabbix_api.host.get(output=['hostid'], preservekeys=True).keys()
+    value_map_ids = zabbix_api.valuemap.get(output=['valuemapid'], preservekeys=True).keys()
+    host_group_ids = zabbix_api.hostgroup.get(output=['groupid'], preservekeys=True).keys()
     export_result = zabbix_api.configuration.export(
         format='json',
         options={

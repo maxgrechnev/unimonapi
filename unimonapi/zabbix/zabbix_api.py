@@ -8,7 +8,6 @@ from unimonapi import HostGroup
 from import_export import export_configs
 from import_export import import_configs
 import lookup
-from functools import wraps
 from pyzabbix import ZabbixAPI as PyZabbixAPI
 from pyzabbix import ZabbixAPIException
 import logging, re, subprocess, threading
@@ -34,7 +33,7 @@ class ZabbixAPI(MonitoringAPI):
         DISASTER:        Event.CRITICAL,
     }
 
-    def __init__(self, url, user, password, agent_repository=None, agent_install_win=None, agent_install_lin=None, match_filter=None):
+    def __init__(self, url, user, password, agent_repository=None, agent_install_win=None, agent_install_lin=None, match_filter='DUMMY'):
         self._agent_repository = agent_repository
         self._agent_install_win = agent_install_win
         self._agent_install_lin = agent_install_lin
@@ -172,7 +171,7 @@ class ZabbixAPI(MonitoringAPI):
                     event_text += tag['tag']
 
                     if len(tag['value']) != 0:
-                        description += ':' + tag['value']
+                        event_text += ':' + tag['value']
 
                     event_text += ', '
 
@@ -264,15 +263,13 @@ class ZabbixAPI(MonitoringAPI):
 
     def get_available_host_groups(self):
         host_groups = []
-        all_groups = self._zabbix_api.hostgroup.get(output=['groupid', 'name', 'flags'])
-        groups_with_templates = self._zabbix_api.hostgroup.get(output=['groupid'], templated_hosts=True)
-        groups_with_templates = [ group['groupid'] for group in groups_with_templates ]
+        all_groups = self._zabbix_api.hostgroup.get(output=['groupid', 'name'], filter={'flags': 0})
+        template_groups = self._zabbix_api.hostgroup.get(output=['groupid'], templated_hosts=True)
+        template_groups = [ group['groupid'] for group in template_groups ]
 
-        # Filter out discovered groups and groups with templates
+        # Filter out template groups
         for group in all_groups:
-            if (group['flags'] != '4' and
-                group['groupid'] not in groups_with_templates
-            ):
+            if group['groupid'] not in template_groups:
                 host_groups.append(group['name'])
 
         return host_groups
@@ -283,12 +280,16 @@ class ZabbixAPI(MonitoringAPI):
 
         for group in groups:
             group_id = self._get_group_id(group)
-            template_id = self._get_template_id(self._match_filter + ' ' + group)
-
             if not group_id:
                 raise UnimonError(u'Group "{}" is not found in Zabbix database'.format(group))
+
+            template = self._match_filter + ' ' + group
+            template_id = self._get_template_id(template, visible=False)
             if not template_id:
-                raise UnimonError(u'Template "{}" is not found in Zabbix database'.format(group))
+                # Try to find also by visible name
+                template_id = self._get_template_id(template, visible=True)
+                if not template_id:
+                    raise UnimonError(u'Template "{}" is not found in Zabbix database'.format(template))
 
             group_ids.append({ 'groupid': group_id })
             template_ids.append({ 'templateid': template_id })
@@ -318,17 +319,17 @@ class ZabbixAPI(MonitoringAPI):
         )
         return result['hostids'][0]
 
-    def get_host_id(self, name):
-        return lookup.get_object_id(self._zabbix_api, name, lookup.HOST)
+    def get_host_id(self, name, visible=False):
+        return lookup.get_object_id(self._zabbix_api, name, lookup.HOST, visible)
 
-    def get_host_name(self, id):
-        return lookup.get_object_name(self._zabbix_api, id, lookup.HOST)
+    def get_host_name(self, id, visible=False):
+        return lookup.get_object_name(self._zabbix_api, id, lookup.HOST, visible)
 
     def _get_group_id(self, name):
         return lookup.get_object_id(self._zabbix_api, name, lookup.HOST_GROUP)
 
-    def _get_template_id(self, name):
-        return lookup.get_object_id(self._zabbix_api, name, lookup.TEMPLATE)
+    def _get_template_id(self, name, visible=False):
+        return lookup.get_object_id(self._zabbix_api, name, lookup.TEMPLATE, visible)
 
     def delete_host(self, id):
         self._zabbix_api.host.delete(id)

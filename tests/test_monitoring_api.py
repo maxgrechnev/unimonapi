@@ -12,9 +12,11 @@ def monitoring_api():
     if callable(getattr(MonitoringAPI, method)) and not method.startswith('_')
 ])
 def monitoring_api_method(request):
+    '''Get all public methods' names of the MonitoringAPI class'''
     return request.param
 
 def test_monitoring_api(monitoring_api, monitoring_api_method):
+    '''Invoke every method with dummy arguments and assert that NotImplemented is raised'''
     method = getattr(monitoring_api, monitoring_api_method)
     dummy_arguments = getargspec(method).args[1:] # Skip 'self' argument
     with pytest.raises(NotImplemented, match='MonitoringAPI method "{}" is not implemented'.format(monitoring_api_method)):

@@ -5,21 +5,20 @@ from unimonapi import UnimonError
 HOST, HOST_GROUP, TEMPLATE, USER, USER_GROUP, SCRIPT, TRIGGER, DISCO_RULE = range(8)
 
 API_OBJECT_KEYS = {
-    HOST:        { 'name': 'host',          'id': 'hostid',     'ids': 'hostids' },
-    HOST_GROUP:  { 'name': 'name',          'id': 'groupid',    'ids': 'groupids' },
-    TEMPLATE:    { 'name': 'host',          'id': 'templateid', 'ids': 'templateids' },
-    USER:        { 'name': 'alias',         'id': 'userid',     'ids': 'userids' },
-    USER_GROUP:  { 'name': 'name',          'id': 'usrgrpid',   'ids': 'usrgrpids' },
-    SCRIPT:      { 'name': 'name',          'id': 'scriptid',   'ids': 'scriptids' },
-    TRIGGER:     { 'name': 'description',   'id': 'triggerid',  'ids': 'triggerids' },
-    DISCO_RULE:  { 'name': 'name',          'id': 'druleid',    'ids': 'druleids' },
+    HOST:        { 'name': 'host',          'visible_name': 'name',         'id': 'hostid',     'ids': 'hostids' },
+    HOST_GROUP:  { 'name': 'name',          'visible_name': 'name',         'id': 'groupid',    'ids': 'groupids' },
+    TEMPLATE:    { 'name': 'host',          'visible_name': 'name',         'id': 'templateid', 'ids': 'templateids' },
+    USER:        { 'name': 'alias',         'visible_name': 'name',         'id': 'userid',     'ids': 'userids' },
+    USER_GROUP:  { 'name': 'name',          'visible_name': 'name',         'id': 'usrgrpid',   'ids': 'usrgrpids' },
+    SCRIPT:      { 'name': 'name',          'visible_name': 'name',         'id': 'scriptid',   'ids': 'scriptids' },
+    TRIGGER:     { 'name': 'description',   'visible_name': 'description',  'id': 'triggerid',  'ids': 'triggerids' },
+    DISCO_RULE:  { 'name': 'name',          'visible_name': 'name',         'id': 'druleid',    'ids': 'druleids' },
 }
 
 def get_object_type_by_id_key(id_key):
     for object_type in API_OBJECT_KEYS:
         if API_OBJECT_KEYS[object_type]['id'] == id_key:
             return object_type
-
     return UnimonError('Unsupported Zabbix API object ID key: ' + id_key)
 
 def get_api_method_by_type(zabbix_api, object_type):
@@ -34,10 +33,13 @@ def get_api_method_by_type(zabbix_api, object_type):
     else:
         raise UnimonError('Unsupported Zabbix API object type: ' + object_type)
 
-def get_object_name(zabbix_api, id, object_type):
+def get_object_name(zabbix_api, id, object_type, visible=False):
     api_metod = get_api_method_by_type(zabbix_api, object_type)
     ids_key = API_OBJECT_KEYS[object_type]['ids']
-    name_key = API_OBJECT_KEYS[object_type]['name']
+    if visible:
+        name_key = API_OBJECT_KEYS[object_type]['visible_name']
+    else:
+        name_key = API_OBJECT_KEYS[object_type]['name']
     kwargs = {
         ids_key:  [id],
         'output': [name_key],
@@ -46,19 +48,22 @@ def get_object_name(zabbix_api, id, object_type):
     if len(objects) == 0: return None
     return objects[0][name_key]
 
-def get_object_id(zabbix_api, name, object_type):
+def get_object_id(zabbix_api, name, object_type, visible=False):
     api_metod = get_api_method_by_type(zabbix_api, object_type)
     id_key = API_OBJECT_KEYS[object_type]['id']
-    name_key = API_OBJECT_KEYS[object_type]['name']
+    if visible:
+        name_key = API_OBJECT_KEYS[object_type]['visible_name']
+    else:
+        name_key = API_OBJECT_KEYS[object_type]['name']
     objects = api_metod(filter={name_key: name}, output=[id_key])
     if len(objects) == 0: return None
     return objects[0][id_key]
 
-def lookup_object(zabbix_api, object, object_type, by_id=True):
+def lookup_object(zabbix_api, object, object_type, by_id=True, visible=False):
     if by_id:
-        return get_object_name(zabbix_api, object, object_type)
+        return get_object_name(zabbix_api, object, object_type, visible)
     else:
-        return get_object_id(zabbix_api, object, object_type)
+        return get_object_id(zabbix_api, object, object_type, visible)
 
 def prepare_object_for_import_export(zabbix_api, object, object_key=None, export=True, filter_keys=[], expand_keys=[], copy_keys={}, rename_keys={}, custom_keys={}):
     ''' Prepare raw Zabbix API object for export or exported object for import by:
